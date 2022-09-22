@@ -71,6 +71,8 @@ main() {
   elif [[ "$#" -eq 1 ]]; then
     if [[ "${1}" == '-c' || "${1}" == '--current' ]]; then
       get_current_profile_name
+    else
+      set_default_config "${1}"
     fi
   else
     echo "Usage: $0 [profile]"
