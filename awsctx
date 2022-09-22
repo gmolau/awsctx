@@ -19,7 +19,8 @@ Usage:
   $SELF <NAME>                : switch to profile <NAME>
   $SELF -                     : switch to the previous profile
   $SELF -c, --current         : show the current profile name
-  $SELF -h,--help             : show this message
+  $SELF -r, --reload          : reload current profile config (e.g. when credentials expired)
+  $SELF -h, --help             : show this message
 EOF
 }
 
@@ -33,23 +34,21 @@ select_profile() {
   if [[ -z "${choice}" ]]; then
     echo 2>&1 "error: you did not choose any of the options"
     exit 1
-  else
-    set_profile "${choice}"
   fi
+
+  save_previous_profile
+  set_profile "${choice}"
+  write_profile "${choice}" "${CURRENT_PROFILE}"
 }
 
 set_profile() {
-  save_previous_profile
-
-  local new_profile="${1}"
+  local profile="${1}"
   local keys
 
   keys=('aws_access_key_id' 'aws_secret_access_key' 'aws_session_token' 'region' 'output')
   for key in "${keys[@]}"; do
-    set_default_config_value "${new_profile}" "${key}"
+    set_default_config_value "${profile}" "${key}"
   done
-
-  write_profile "${new_profile}" "${CURRENT_PROFILE}"
 }
 
 set_default_config_value() {
@@ -63,10 +62,10 @@ set_default_config_value() {
 }
 
 write_profile() {
-  local profile_name="$1"
+  local profile="$1"
   local dest="$2"
   mkdir -p "$(dirname "${dest}")"
-  echo -n "${profile_name}" > "${dest}"
+  echo -n "${profile}" > "${dest}"
 }
 
 read_profile() {
@@ -97,10 +96,10 @@ restore_previous_profile() {
 }
 
 get_profile() {
-  local current_profile
-  current_profile="$(read_profile "${CURRENT_PROFILE}")"
-  if [[ -n "${current_profile}" ]]; then
-    echo -n "${current_profile}"
+  local profile
+  profile="$(read_profile "${CURRENT_PROFILE}")"
+  if [[ -n "${profile}" ]]; then
+    echo -n "${profile}"
   fi
 }
 
@@ -116,6 +115,8 @@ main() {
       restore_previous_profile
     elif [[ "${1}" == '-c' || "${1}" == '--current' ]]; then
       get_profile
+    elif [[ "${1}" == '-r' || "${1}" == '--reload' ]]; then
+      set_profile "$(get_profile)"
     elif [[ "${1}" == '-h' || "${1}" == '--help' ]]; then
       usage
     else
