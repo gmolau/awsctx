@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+set -eou pipefail
+
+SELF_CMD="$0"
+AWS_CLI=aws
+DEFAULT_PROFILE=default
+
+list_profiles() {
+    $AWS_CLI configure list-profiles | sort -n
+}
+
+select_profile() {
+  local choice
+  choice="$(FZF_DEFAULT_COMMAND="${SELF_CMD}" fzf --ansi --no-preview || true)"
+  if [[ -z "${choice}" ]]; then
+    echo 2>&1 "error: you did not choose any of the options"
+    exit 1
+  else
+    set_default_config "${choice}"
+  fi
+}
+
+set_default_config() {
+  local src_profile="${1}"
+  local keys
+  keys=('aws_access_key_id' 'aws_secret_access_key' 'aws_session_token' 'region' 'output')
+  for key in "${keys[@]}"; do
+    set_default_config_value "${src_profile}" "${key}"
+  done
+}
+
+set_default_config_value() {
+  local src_profile="$1"
+  local key="$2"
+  local value
+  value=$($AWS_CLI configure get "${key}" --profile "${src_profile}") || true
+  if [[ -n "${value}" ]]; then
+    $AWS_CLI configure set "${key}" "${value}" --profile "${DEFAULT_PROFILE}"
+  fi
+}
+
+main() {
+  if [[ -t 1 && "$(type fzf &>/dev/null; echo $?)" -eq 0 ]]; then
+    select_profile
+  else
+    list_profiles
+  fi
+}
+
+main "$@"
