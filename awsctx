@@ -7,6 +7,21 @@ SELF_DIR="${HOME}/.awsctx"
 AWS_CLI=aws
 DEFAULT_PROFILE=default
 CURRENT_PROFILE="${SELF_DIR}/current"
+PREVIOUS_PROFILE="${SELF_DIR}/previous"
+
+usage() {
+  local SELF
+  SELF=$(basename "${SELF_CMD}")
+
+  cat <<EOF
+Usage:
+  $SELF                       : list the profiles
+  $SELF <NAME>                : switch to profile <NAME>
+  $SELF -                     : switch to the previous profile
+  $SELF -c, --current         : show the current profile name
+  $SELF -h,--help             : show this message
+EOF
+}
 
 list_profiles() {
     $AWS_CLI configure list-profiles | sort -n
@@ -19,18 +34,22 @@ select_profile() {
     echo 2>&1 "error: you did not choose any of the options"
     exit 1
   else
-    set_default_config "${choice}"
+    set_profile "${choice}"
   fi
 }
 
-set_default_config() {
-  local src_profile="${1}"
+set_profile() {
+  save_previous_profile
+
+  local new_profile="${1}"
   local keys
+
   keys=('aws_access_key_id' 'aws_secret_access_key' 'aws_session_token' 'region' 'output')
   for key in "${keys[@]}"; do
-    set_default_config_value "${src_profile}" "${key}"
+    set_default_config_value "${new_profile}" "${key}"
   done
-  write_current_profile_name "${src_profile}"
+
+  write_profile "${new_profile}" "${CURRENT_PROFILE}"
 }
 
 set_default_config_value() {
@@ -43,18 +62,45 @@ set_default_config_value() {
   fi
 }
 
-write_current_profile_name() {
+write_profile() {
   local profile_name="$1"
-  mkdir -p "${SELF_DIR}"
-  echo -n "${profile_name}" > "${CURRENT_PROFILE}"
+  local dest="$2"
+  mkdir -p "$(dirname "${dest}")"
+  echo -n "${profile_name}" > "${dest}"
 }
 
-get_current_profile_name() {
-  if [[ -f "${CURRENT_PROFILE}" ]]; then
-    cat "${CURRENT_PROFILE}"
+read_profile() {
+  local src="$1"
+  local profile
+  if [[ -f "${src}" ]]; then
+    profile="$(cat "${src}")"
   else
-    echo 2>&1 "error: no profile set via $(basename "${SELF_CMD}")"
-    exit 1
+    profile=""
+  fi
+  echo -n "${profile}"
+}
+
+save_previous_profile() {
+  local profile
+  profile="$(read_profile "${CURRENT_PROFILE}")"
+  if [[ -n "${profile}" ]]; then
+    write_profile "${profile}" "${PREVIOUS_PROFILE}"
+  fi
+}
+
+restore_previous_profile() {
+  local profile
+  profile="$(read_profile "${PREVIOUS_PROFILE}")"
+  if [[ -n "${profile}" ]]; then
+    set_profile "${profile}"
+  fi
+}
+
+get_profile() {
+  local current_profile
+  current_profile="$(read_profile "${CURRENT_PROFILE}")"
+  if [[ -n "${current_profile}" ]]; then
+    echo -n "${current_profile}"
   fi
 }
 
@@ -65,17 +111,22 @@ main() {
     else
       list_profiles
     fi
+  elif [[ "$#" -eq 1 ]]; then
+    if [[ "${1}" == "-" ]]; then
+      restore_previous_profile
+    elif [[ "${1}" == '-c' || "${1}" == '--current' ]]; then
+      get_profile
+    elif [[ "${1}" == '-h' || "${1}" == '--help' ]]; then
+      usage
+    else
+      set_profile "${1}"
+    fi
   elif [[ "$#" -gt 1 ]]; then
     echo "error: too many arguments" >&2
+    usage
     exit 1
-  elif [[ "$#" -eq 1 ]]; then
-    if [[ "${1}" == '-c' || "${1}" == '--current' ]]; then
-      get_current_profile_name
-    else
-      set_default_config "${1}"
-    fi
   else
-    echo "Usage: $0 [profile]"
+    usage
     exit 1
   fi
 }
