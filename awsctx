@@ -9,6 +9,20 @@ DEFAULT_PROFILE=default
 CURRENT_PROFILE="${SELF_DIR}/current"
 PREVIOUS_PROFILE="${SELF_DIR}/previous"
 
+usage() {
+  local SELF
+  SELF=$(basename "${SELF_CMD}")
+
+  cat <<EOF
+Usage:
+  $SELF                       : list the profiles
+  $SELF <NAME>                : switch to profile <NAME>
+  $SELF -                     : switch to the previous profile
+  $SELF -c, --current         : show the current profile name
+  $SELF -h,--help             : show this message
+EOF
+}
+
 list_profiles() {
     $AWS_CLI configure list-profiles | sort -n
 }
@@ -102,14 +116,17 @@ main() {
       restore_previous_profile
     elif [[ "${1}" == '-c' || "${1}" == '--current' ]]; then
       get_profile
+    elif [[ "${1}" == '-h' || "${1}" == '--help' ]]; then
+      usage
     else
       set_profile "${1}"
     fi
   elif [[ "$#" -gt 1 ]]; then
     echo "error: too many arguments" >&2
+    usage
     exit 1
   else
-    echo "Usage: $0 [profile]"
+    usage
     exit 1
   fi
 }
