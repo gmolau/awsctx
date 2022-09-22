@@ -8,11 +8,6 @@ Depends on the AWS CLI and fzf. Works purely through the AWS CLI config mechanis
 Simply put the `awsctx` script somewhere in your $PATH, e.g.
 
 ```bash
-<<<<<<< Updated upstream
-git clone git@github.com:gmolau/awsctx.git /tmp/awsctx
-mv /tmps/awsctx/awsctx /usr/local/bin/awsctx
-```
-=======
 curl -o /usr/local/bin/awsctx https://raw.githubusercontent.com/gmolau/awsctx/main/awsctx
 chmod +x /usr/local/bin/awsctx
 ```
@@ -32,4 +27,3 @@ when = true
 ```
 
 For modifying the order of modules in the prompt see the [Starship docs](https://starship.rs/config/#prompt).
->>>>>>> Stashed changes
