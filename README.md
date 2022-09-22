@@ -8,8 +8,8 @@ Depends on the AWS CLI and FZF. Works purely through the AWS CLI config mechanis
 Simply put the `awsctx` script somewhere in your $PATH, e.g.
 
 ```bash
-git clone git@github.com:gmolau/awsctx.git /tmp/awsctx
-mv /tmps/awsctx/awsctx /usr/local/bin/awsctx
+curl -o /usr/local/bin/awsctx https://raw.githubusercontent.com/gmolau/awsctx/main/awsctx
+chmod +x /usr/local/bin/awsctx
 ```
 
 # FAQ
