@@ -3,8 +3,10 @@
 set -eou pipefail
 
 SELF_CMD="$0"
+SELF_DIR="${HOME}/.awsctx"
 AWS_CLI=aws
 DEFAULT_PROFILE=default
+CURRENT_PROFILE="${SELF_DIR}/current"
 
 list_profiles() {
     $AWS_CLI configure list-profiles | sort -n
@@ -28,6 +30,7 @@ set_default_config() {
   for key in "${keys[@]}"; do
     set_default_config_value "${src_profile}" "${key}"
   done
+  write_current_profile_name "${src_profile}"
 }
 
 set_default_config_value() {
@@ -40,11 +43,38 @@ set_default_config_value() {
   fi
 }
 
-main() {
-  if [[ -t 1 && "$(type fzf &>/dev/null; echo $?)" -eq 0 ]]; then
-    select_profile
+write_current_profile_name() {
+  local profile_name="$1"
+  mkdir -p "${SELF_DIR}"
+  echo -n "${profile_name}" > "${CURRENT_PROFILE}"
+}
+
+get_current_profile_name() {
+  if [[ -f "${CURRENT_PROFILE}" ]]; then
+    cat "${CURRENT_PROFILE}"
   else
-    list_profiles
+    echo 2>&1 "error: no profile set via $(basename "${SELF_CMD}")"
+    exit 1
+  fi
+}
+
+main() {
+  if [[ "$#" -eq 0 ]]; then
+    if [[ -t 1 && "$(type fzf &>/dev/null; echo $?)" -eq 0 ]]; then
+      select_profile
+    else
+      list_profiles
+    fi
+  elif [[ "$#" -gt 1 ]]; then
+    echo "error: too many arguments" >&2
+    exit 1
+  elif [[ "$#" -eq 1 ]]; then
+    if [[ "${1}" == '-c' || "${1}" == '--current' ]]; then
+      get_current_profile_name
+    fi
+  else
+    echo "Usage: $0 [profile]"
+    exit 1
   fi
 }
 
