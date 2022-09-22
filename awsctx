@@ -20,7 +20,7 @@ Usage:
   $SELF -                     : switch to the previous profile
   $SELF -c, --current         : show the current profile name
   $SELF -r, --reload          : reload current profile config (e.g. when credentials expired)
-  $SELF -h, --help             : show this message
+  $SELF -h, --help            : show this message
 EOF
 }
 
