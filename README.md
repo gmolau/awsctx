@@ -11,3 +11,19 @@ Simply put the `awsctx` script somewhere in your $PATH, e.g.
 git clone git@github.com:gmolau/awsctx.git /tmp/awsctx
 mv /tmps/awsctx/awsctx /usr/local/bin/awsctx
 ```
+
+# FAQ
+
+## How can I display the activated profile in my [Starship](https://starship.rs) prompt?
+
+The default AWS module in Starship reads the `AWS_PROFILE` environment variable, which this script does not set. However, you can use a custom module in combination with the `awsctx --current` command to replicate the same behavior. For this you need to add something like this to your `starship.toml`:
+
+```toml
+[custom.awsctx]
+command = "awsctx --current"
+style = "bold yellow"
+format = "[($output)]($style)"
+when = true
+```
+
+For modifying the order of modules in the prompt see the [Starship docs](https://starship.rs/config/#prompt).
